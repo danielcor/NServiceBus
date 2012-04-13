@@ -1,0 +1,63 @@
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using log4net;
+
+namespace NServiceBus.Scheduling
+{
+    public class DefaultScheduler : IScheduler
+    {
+        static readonly ILog logger = LogManager.GetLogger(typeof(DefaultScheduler));
+
+        private readonly IBus _bus;
+        private readonly IScheduledTaskStorage _scheduledTaskStorage;        
+
+        public DefaultScheduler(IBus bus, IScheduledTaskStorage scheduledTaskStorage)
+        {
+            _bus = bus;
+            _scheduledTaskStorage = scheduledTaskStorage;
+        }
+
+        public void Schedule(ScheduledTask task)
+        {
+            _scheduledTaskStorage.Add(task);
+            DeferTask(task);
+        }
+
+        public void Start(Guid taskId)
+        {
+            var task = _scheduledTaskStorage.Get(taskId);
+
+            if (task == null)
+            {
+                logger.Info(string.Format("Could not find any scheduled task with with Id {0}. The DefaultScheduler does not persist task between restarts.", taskId));
+                return;
+            }
+
+            DeferTask(task);
+            ExecuteTask(task);
+        }
+
+        private static void ExecuteTask(ScheduledTask scheduledTask)
+        {
+            logger.Info(string.Format("Start executing scheduled task [{0}]", scheduledTask.Name));
+            
+            var sw = new Stopwatch();            
+            sw.Start();
+
+            Task.Factory
+                .StartNew(scheduledTask.Task, TaskCreationOptions.None)
+                .ContinueWith(_ =>
+                                  {
+                                      sw.Stop();
+                                      logger.Info(string.Format("Scheduled task [{0}] run for {1}", scheduledTask.Name, sw.Elapsed.ToString()));
+                                  });
+        }
+
+        private void DeferTask(ScheduledTask task)
+        {
+            var processAt = DateTime.UtcNow + task.Every;
+            _bus.Defer(processAt, new Messages.ScheduledTask { TaskId = task.Id });
+        }
+    }
+}
