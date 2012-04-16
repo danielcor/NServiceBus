@@ -2,16 +2,16 @@
 {
     public class ScheduledTaskMessageHandler : IHandleMessages<Messages.ScheduledTask>
     {
-        private readonly IScheduler _scheduler;
+        private readonly IScheduler scheduler;
 
         public ScheduledTaskMessageHandler(IScheduler scheduler)
         {
-            _scheduler = scheduler;
+            this.scheduler = scheduler;
         }
 
         public void Handle(Messages.ScheduledTask message)
         {
-            _scheduler.Start(message.TaskId);
+            scheduler.Start(message.TaskId);
         }
     }
 }

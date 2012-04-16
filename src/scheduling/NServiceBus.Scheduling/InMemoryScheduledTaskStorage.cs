@@ -1,23 +1,29 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace NServiceBus.Scheduling
 {
     public class InMemoryScheduledTaskStorage : IScheduledTaskStorage
     {
-        protected readonly IDictionary<Guid, ScheduledTask> _scheduledTasks = new Dictionary<Guid, ScheduledTask>();
+        protected readonly IDictionary<Guid, ScheduledTask> scheduledTasks = new ConcurrentDictionary<Guid, ScheduledTask>();
 
         public void Add(ScheduledTask scheduledTask)
         {
-            _scheduledTasks.Add(scheduledTask.Id, scheduledTask);
+            scheduledTasks.Add(scheduledTask.Id, scheduledTask);
         }
 
         public ScheduledTask Get(Guid taskId)
         {
-            if (_scheduledTasks.ContainsKey(taskId))
-                return _scheduledTasks[taskId];
+            if (scheduledTasks.ContainsKey(taskId))
+                return scheduledTasks[taskId];
 
             return null;
+        }
+
+        public IDictionary<Guid, ScheduledTask> Tasks
+        {
+            get { return scheduledTasks; }            
         }
     }
 }

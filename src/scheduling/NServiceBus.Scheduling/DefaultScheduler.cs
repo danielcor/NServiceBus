@@ -9,28 +9,28 @@ namespace NServiceBus.Scheduling
     {
         static readonly ILog logger = LogManager.GetLogger(typeof(DefaultScheduler));
 
-        private readonly IBus _bus;
-        private readonly IScheduledTaskStorage _scheduledTaskStorage;        
+        private readonly IBus bus;
+        private readonly IScheduledTaskStorage scheduledTaskStorage;        
 
         public DefaultScheduler(IBus bus, IScheduledTaskStorage scheduledTaskStorage)
         {
-            _bus = bus;
-            _scheduledTaskStorage = scheduledTaskStorage;
+            this.bus = bus;
+            this.scheduledTaskStorage = scheduledTaskStorage;
         }
 
         public void Schedule(ScheduledTask task)
         {
-            _scheduledTaskStorage.Add(task);
+            scheduledTaskStorage.Add(task);
             DeferTask(task);
         }
 
         public void Start(Guid taskId)
         {
-            var task = _scheduledTaskStorage.Get(taskId);
+            var task = scheduledTaskStorage.Get(taskId);
 
             if (task == null)
             {
-                logger.Info(string.Format("Could not find any scheduled task with with Id {0}. The DefaultScheduler does not persist task between restarts.", taskId));
+                logger.Info(string.Format("Could not find any scheduled task with with Id {0}. The DefaultScheduler does not persist tasks between restarts.", taskId));
                 return;
             }
 
@@ -55,9 +55,8 @@ namespace NServiceBus.Scheduling
         }
 
         private void DeferTask(ScheduledTask task)
-        {
-            var processAt = DateTime.UtcNow + task.Every;
-            _bus.Defer(processAt, new Messages.ScheduledTask { TaskId = task.Id });
+        {            
+            bus.Defer(task.Every, new Messages.ScheduledTask { TaskId = task.Id });
         }
     }
 }

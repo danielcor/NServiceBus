@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 
@@ -12,7 +13,7 @@ namespace NServiceBus.Scheduling.Tests
         private FuncBuilder _builder = new FuncBuilder();
         private FakeBus _bus = new FakeBus();
 
-        private InMemoryScheduledTaskStorageForTest _taskStorage = new InMemoryScheduledTaskStorageForTest();        
+        private InMemoryScheduledTaskStorage _taskStorage = new InMemoryScheduledTaskStorage();        
 
         [SetUp]
         public void SetUp()
@@ -41,23 +42,7 @@ namespace NServiceBus.Scheduling.Tests
 
         private bool EnsureThatNameExists(string name)
         {
-            bool actionNameFound = false;
-            foreach (var task in _taskStorage.Tasks)
-            {
-                if (task.Value.Name.Equals(name))
-                {
-                    actionNameFound = true;
-                }
-            }
-            return actionNameFound;
-        }
-    }
-
-    public class InMemoryScheduledTaskStorageForTest : InMemoryScheduledTaskStorage
-    {
-        public IDictionary<Guid, ScheduledTask> Tasks
-        {
-            get { return _scheduledTasks; }
+            return _taskStorage.Tasks.Where(task => task.Value.Name.Equals(name)).Any();
         }
     }
 }

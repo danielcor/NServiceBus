@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NServiceBus.Scheduling
 {
@@ -6,5 +7,6 @@ namespace NServiceBus.Scheduling
     {
         void Add(ScheduledTask scheduledTask);
         ScheduledTask Get(Guid taskId);
+        IDictionary<Guid, ScheduledTask> Tasks { get; }
     }
 }

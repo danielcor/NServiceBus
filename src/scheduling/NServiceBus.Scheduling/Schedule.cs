@@ -6,13 +6,13 @@ namespace NServiceBus
 {
     public class Schedule
     {        
-        private readonly IScheduler _scheduler;
-        private readonly ScheduledTask _scheduledTask;
+        private readonly IScheduler scheduler;
+        private readonly ScheduledTask scheduledTask;
 
         private Schedule(TimeSpan timeSpan)
         {            
-            _scheduler = Configure.Instance.Builder.Build<IScheduler>();
-            _scheduledTask = new ScheduledTask { Every = timeSpan };
+            scheduler = Configure.Instance.Builder.Build<IScheduler>();
+            scheduledTask = new ScheduledTask { Every = timeSpan };
         }
 
         public static Schedule Every(TimeSpan timeSpan)
@@ -27,9 +27,9 @@ namespace NServiceBus
 
         public void Action(string name, Action task)
         {
-            _scheduledTask.Task = task;
-            _scheduledTask.Name = name;
-            _scheduler.Schedule(_scheduledTask);            
+            scheduledTask.Task = task;
+            scheduledTask.Name = name;
+            scheduler.Schedule(scheduledTask);            
         }
     }
 }
