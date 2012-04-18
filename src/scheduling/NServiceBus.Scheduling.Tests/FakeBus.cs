@@ -137,6 +137,7 @@ namespace NServiceBus.Scheduling.Tests
         public int DeferWasCalled
         {
             get { return _deferWasCalled; }
+            set { _deferWasCalled = value; }
         }
         private TimeSpan _deferDelay = TimeSpan.MinValue;
         public TimeSpan DeferDelay

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using NUnit.Framework;
 
 namespace NServiceBus.Scheduling.Tests
@@ -13,7 +14,7 @@ namespace NServiceBus.Scheduling.Tests
         private FuncBuilder _builder = new FuncBuilder();
         private FakeBus _bus = new FakeBus();
 
-        private InMemoryScheduledTaskStorage _taskStorage = new InMemoryScheduledTaskStorage();        
+        private readonly InMemoryScheduledTaskStorage _taskStorage = new InMemoryScheduledTaskStorage();        
 
         [SetUp]
         public void SetUp()
@@ -40,9 +41,61 @@ namespace NServiceBus.Scheduling.Tests
             Assert.That(EnsureThatNameExists("ScheduleTests"));
         }
 
+        [Test]
+        public void Schedule_tasks_using_mutiple_threads()
+        {
+            var threads = new Thread[20];
+            
+            ScheduleTaskThreads(threads);
+
+            threads = new Thread[20];
+            
+            _bus.DeferWasCalled = 0;
+            InvokeHandlerThreads(threads);
+
+            Assert.That(_bus.DeferWasCalled, Is.EqualTo(20));
+        }
+
         private bool EnsureThatNameExists(string name)
         {
             return _taskStorage.Tasks.Where(task => task.Value.Name.Equals(name)).Any();
+        }
+
+        private static void ScheduleTaskThreads(IList<Thread> threads)
+        {
+            for (var i=0; i < threads.Count; i++)
+            {
+                threads[i] = new Thread(() => Schedule.Every(TimeSpan.FromSeconds(1)).Action(() => {}));
+            }
+
+            StartJoin(threads);
+        }
+
+        private void InvokeHandlerThreads(IList<Thread> threads)
+        {
+            var j = 0;
+
+            foreach (var task in _taskStorage.Tasks)
+            {
+                var t = task;
+                threads[j] = new Thread(() => new ScheduledTaskMessageHandler(new DefaultScheduler(_bus, _taskStorage)).Handle(new Messages.ScheduledTask { TaskId = t.Key }));
+                j++;
+            }
+
+            StartJoin(threads);
+        }
+
+        private static void StartJoin(IEnumerable<Thread> threads)
+        {
+            foreach (var t in threads)
+            {
+                t.Start();
+            }
+
+            foreach (var t in threads)
+            {
+                t.Join();
+            }
         }
     }
 }
